@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="CHATIN, ruang ngobrol real-time yang simpel dan nyaman." />
+    <meta name="theme-color" content="#fff9df" />
+    <title>CHATIN — Ruang ngobrolmu</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/socket.io/socket.io.js" defer></script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main id="auth-screen" class="auth-screen">
+      <header class="auth-header">
+        <a class="brand" href="/" aria-label="CHATIN beranda">
+          <span class="brand-mark" aria-hidden="true">✳</span>
+          <span class="brand-name">CHATIN<span>.</span></span>
+        </a>
+        <span class="auth-header-note"><span class="status-dot"></span> Ruang ngobrol real-time</span>
+      </header>
+
+      <section class="auth-layout">
+        <div class="auth-intro">
+          <span class="eyebrow-pill"><span>✦</span> OBROLAN SERU, DIMULAI DI SINI</span>
+          <h1>Ngobrol lebih<br />dekat dengan <span>CHATIN.</span></h1>
+          <p>
+            Chat instan modern yang ringan dan cepat. Terhubung secara real-time lewat
+            WebSocket, kirim pesan pribadi atau rame-rame, tanpa registrasi yang rumit.
+          </p>
+          <div class="feature-list">
+            <span><b>↯</b> Pesan real-time</span>
+            <span><b>◈</b> Chat personal &amp; grup</span>
+            <span><b>✓</b> Privasi akun</span>
+          </div>
+          <div class="intro-decoration" aria-hidden="true">
+            <span class="decoration-star star-one">✦</span>
+            <span class="decoration-star star-two">✧</span>
+            <span class="decoration-star star-three">✦</span>
+            <span class="decoration-bubble bubble-one">Halo! 👋</span>
+            <span class="decoration-bubble bubble-two">Sampai jumpa di CHATIN</span>
+          </div>
+        </div>
+
+        <section class="auth-card" aria-labelledby="auth-title">
+          <div class="auth-card-mark" aria-hidden="true">✳</div>
+          <p class="card-eyebrow">RUANG KAMU SUDAH MENUNGGU</p>
+          <h2 id="auth-title">Selamat datang</h2>
+          <p class="auth-card-description">Login atau buat akun untuk mulai mengobrol.</p>
+
+          <div class="auth-tabs" role="tablist" aria-label="Autentikasi">
+            <button id="login-tab" class="auth-tab is-active" type="button" role="tab" aria-selected="true">Masuk</button>
+            <button id="register-tab" class="auth-tab" type="button" role="tab" aria-selected="false">Buat akun</button>
+          </div>
+
+          <form id="login-form" class="auth-form">
+            <label for="login-email">EMAIL</label>
+            <input id="login-email" name="email" type="email" placeholder="nama@email.com" autocomplete="email" required />
+            <label for="login-password">PASSWORD</label>
+            <input id="login-password" name="password" type="password" placeholder="Masukkan password" autocomplete="current-password" required />
+            <p id="login-error" class="form-error" role="alert" aria-live="polite"></p>
+            <button id="login-button" class="primary-button" type="submit">Masuk ke CHATIN <span>→</span></button>
+          </form>
+
+          <form id="register-form" class="auth-form" hidden>
+            <label for="register-name">NAMA LENGKAP</label>
+            <input id="register-name" name="fullName" type="text" maxlength="60" placeholder="Nama kamu" autocomplete="name" required />
+            <label for="register-username">USERNAME</label>
+            <input id="register-username" name="username" type="text" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" placeholder="contoh: ratuchat" autocomplete="username" required />
+            <label for="register-email">EMAIL</label>
+            <input id="register-email" name="email" type="email" placeholder="nama@email.com" autocomplete="email" required />
+            <label for="register-password">PASSWORD <span class="label-hint">minimal 8 karakter</span></label>
+            <input id="register-password" name="password" type="password" minlength="8" maxlength="128" placeholder="Buat password" autocomplete="new-password" required />
+            <p id="register-error" class="form-error" role="alert" aria-live="polite"></p>
+            <button id="register-button" class="primary-button" type="submit">Buat akun &amp; masuk <span>→</span></button>
+          </form>
+          <p class="auth-footnote"><span>✦</span> Data akun disimpan lokal di server CHATIN.</p>
+        </section>
+      </section>
+
+      <footer class="auth-footer"><span>Dibuat untuk ngobrol lebih dekat.</span><span>CHATIN <b>♥</b> kamu</span></footer>
+    </main>
+
+    <main id="chat-app" class="chat-app" hidden>
+      <header class="app-header">
+        <a class="brand" href="/" aria-label="CHATIN beranda">
+          <span class="brand-mark" aria-hidden="true">✳</span>
+          <span class="brand-name">CHATIN<span>.</span></span>
+        </a>
+        <div class="header-center"><span class="status-dot"></span> Ruang ngobrol real-time</div>
+        <div class="account-menu">
+          <button id="profile-button" class="profile-button" type="button" aria-label="Buka profil">
+            <span id="header-avatar" class="avatar avatar-small">C</span>
+            <span id="header-name" class="header-name">Akun</span>
+            <span class="menu-chevron">⌄</span>
+          </button>
+          <button id="logout-button" class="logout-button" type="button">Keluar</button>
+        </div>
+      </header>
+
+      <section class="chat-workspace">
+        <aside class="chat-sidebar">
+          <div class="sidebar-title">
+            <div><p class="section-kicker">RUANG KAMU</p><h1>CHATIN</h1></div>
+            <button id="create-group-button" class="icon-button create-group-button" type="button" aria-label="Buat atau cari grup" title="Grup">＋</button>
+          </div>
+
+          <label class="search-box">
+            <span aria-hidden="true">⌕</span>
+            <input id="user-search" type="search" placeholder="Cari pengguna online..." autocomplete="off" />
+          </label>
+          <div id="search-results" class="search-results" hidden></div>
+
+          <div class="list-heading"><span>PESAN</span><button id="browse-groups-button" class="text-button" type="button">Jelajahi grup</button></div>
+          <ul id="conversation-list" class="conversation-list" aria-label="Daftar percakapan"></ul>
+
+          <div class="sidebar-bottom">
+            <div class="sidebar-note"><span>✦</span><p>Ngobrol santai,<br /><strong>tetap saling menghargai.</strong></p></div>
+            <button id="sidebar-profile-button" class="sidebar-profile" type="button">
+              <span id="sidebar-avatar" class="avatar avatar-small">C</span>
+              <span class="sidebar-profile-copy"><strong id="sidebar-name">Akun</strong><small id="sidebar-username">@akun</small></span>
+              <span class="profile-edit-label">Profil</span>
+            </button>
+          </div>
+        </aside>
+
+        <section class="conversation-panel" aria-label="Percakapan">
+          <header class="conversation-header">
+            <div class="conversation-heading">
+              <span id="conversation-avatar" class="avatar conversation-avatar">#</span>
+              <div><h2 id="conversation-title">Obrolan umum</h2><p id="conversation-subtitle"><span class="status-dot"></span> Ruang publik</p></div>
+            </div>
+            <div class="conversation-tools">
+              <button id="invite-member-button" class="tool-button invite-member-button" type="button" title="Tambah anggota" aria-label="Tambah anggota" hidden>＋</button>
+            </div>
+          </header>
+
+          <div id="messages" class="messages" role="log" aria-live="polite" aria-relevant="additions">
+            <div id="welcome-message" class="welcome-message"><span>✦</span><h3>Ruang ngobrolmu siap</h3><p>Pilih percakapan atau sapa teman yang sedang online.</p></div>
+          </div>
+
+          <div id="emoji-panel" class="picker-panel emoji-panel" hidden aria-label="Pilih emoji"></div>
+          <p id="message-error" class="message-error" role="alert" hidden></p>
+          <form id="message-form" class="message-composer">
+            <button id="emoji-button" class="composer-tool" type="button" aria-label="Pilih emoji" title="Emoji">☺</button>
+            <label class="sr-only" for="message-input">Tulis pesan</label>
+            <input id="message-input" name="message" type="text" maxlength="2000" placeholder="Tulis pesan..." autocomplete="off" disabled />
+            <button id="send-button" class="send-button" type="submit" aria-label="Kirim pesan" disabled>➤</button>
+          </form>
+          <p class="composer-hint">Tekan <kbd>Enter</kbd> untuk mengirim</p>
+        </section>
+      </section>
+      <footer class="app-footer"><span>CHATIN <b>♥</b> kamu</span><span>Pesan dan status tersinkron real-time</span></footer>
+    </main>
+
+    <dialog id="profile-dialog" class="app-dialog">
+      <form id="profile-form" class="dialog-card">
+        <div class="dialog-heading"><div><p class="section-kicker">AKUN CHATIN</p><h2>Profil kamu</h2></div><button class="dialog-close" type="button" data-close-dialog="profile-dialog" aria-label="Tutup">×</button></div>
+        <div class="avatar-editor">
+          <img id="profile-avatar-preview" class="avatar avatar-large" alt="" hidden />
+          <span id="profile-avatar-fallback" class="avatar avatar-large">C</span>
+          <label class="secondary-button upload-avatar-button" for="avatar-input">Pilih foto</label>
+          <input id="avatar-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+          <button id="remove-avatar-button" class="text-button" type="button">Hapus foto</button>
+        </div>
+        <label for="profile-fullname">NAMA LENGKAP</label><input id="profile-fullname" name="fullName" maxlength="60" required />
+        <label for="profile-username">USERNAME</label><input id="profile-username" name="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" required />
+        <label for="profile-bio">BIO <span class="label-hint">maksimal 160 karakter</span></label><textarea id="profile-bio" name="bio" maxlength="160" rows="3" placeholder="Ceritakan sedikit tentang dirimu"></textarea>
+        <p id="profile-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog="profile-dialog">Batal</button><button id="save-profile-button" class="primary-button" type="submit">Simpan profil</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="group-dialog" class="app-dialog">
+      <section class="dialog-card">
+        <div class="dialog-heading"><div><p class="section-kicker">OBROLAN BARENG</p><h2>Grup CHATIN</h2></div><button class="dialog-close" type="button" data-close-dialog="group-dialog" aria-label="Tutup">×</button></div>
+        <form id="group-form">
+          <label for="group-name">BUAT GRUP BARU</label>
+          <div class="inline-form"><input id="group-name" name="name" maxlength="50" placeholder="Nama grup" required /><button class="primary-button" type="submit">Buat</button></div>
+          <p id="group-error" class="form-error" role="alert"></p>
+        </form>
+        <section id="group-invite-panel" class="group-invite-panel" hidden>
+          <div class="group-code-section">
+            <label for="group-code-display">KODE UNDANGAN GRUP</label>
+            <div class="inline-form">
+              <input id="group-code-display" type="text" readonly aria-label="Kode undangan grup" />
+              <button id="copy-group-code-button" class="secondary-button" type="button">Salin</button>
+            </div>
+            <p class="field-help">Bagikan kode ini. Pengguna memasukkan kodenya secara manual untuk bergabung.</p>
+          </div>
+          <form id="invite-member-form">
+            <label for="invite-username">TAMBAHKAN DENGAN USERNAME</label>
+            <div class="inline-form">
+              <input id="invite-username" name="username" maxlength="25" placeholder="Ketik username, mis. ratuchat" required />
+              <button id="invite-member-submit" class="primary-button" type="submit">Tambah</button>
+            </div>
+            <p id="invite-error" class="form-error" role="alert"></p>
+          </form>
+          <section class="group-contact-section" aria-labelledby="group-contact-heading">
+            <label id="group-contact-heading" for="group-contact-search">PILIH DARI KONTAK / CHAT SEBELUMNYA</label>
+            <input id="group-contact-search" type="search" placeholder="Cari nama atau @username" autocomplete="off" />
+            <ul id="group-contact-list" class="group-contact-list" aria-live="polite"></ul>
+          </section>
+          <div class="group-membership-actions">
+            <button id="group-membership-action" class="group-danger-button" type="button" hidden></button>
+            <p id="group-membership-help" class="field-help"></p>
+          </div>
+        </section>
+        <form id="join-code-form" class="join-code-form">
+          <label for="join-group-code">MASUKKAN KODE GRUP</label>
+          <p id="selected-group-name" class="field-help">Pilih grup di direktori atau masukkan kode yang dibagikan.</p>
+          <div class="inline-form">
+            <input id="join-group-code" name="code" maxlength="16" placeholder="Contoh: CH-12AB34CD56" required />
+            <button id="join-code-button" class="secondary-button" type="submit">Gabung</button>
+          </div>
+          <p id="join-code-error" class="form-error" role="alert"></p>
+        </form>
+        <div class="group-directory-heading"><h3>Grup tersedia · perlu kode</h3><button id="refresh-groups-button" class="text-button" type="button">Muat ulang</button></div>
+        <label class="sr-only" for="group-directory-search">Cari grup</label>
+        <input id="group-directory-search" class="group-directory-search" type="search" placeholder="Cari nama grup..." autocomplete="off" />
+        <ul id="group-directory" class="group-directory" aria-label="Direktori grup; kode diperlukan untuk bergabung"></ul>
+      </section>
+    </dialog>
+  </body>
+</html>
